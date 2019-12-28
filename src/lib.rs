@@ -149,7 +149,7 @@ pub mod prelude {
 }
 
 use core::cell::RefCell;
-pub use prelude::*;
+pub use crate::prelude::*;
 
 /// Any object implementing this trait guarantees exclusive access to the data contained
 /// within the mutex for the duration of the lock.
