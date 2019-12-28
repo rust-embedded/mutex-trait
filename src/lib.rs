@@ -6,6 +6,8 @@
 //! contained within it
 //! - Helper traits and implementations which allows for multiple locks to be taken at once
 //!
+//! RFC that added this trait: [RFC #377](https://github.com/rust-embedded/wg/blob/master/rfcs/0377-mutex-trait.md)
+//!
 //! # Example
 //!
 //! ```
