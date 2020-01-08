@@ -7,7 +7,7 @@
 
 This project is developed and maintained by the [Resources team][team].
 
-## [Documentation](https://docs.rs/crate/mutex-trait)
+## [Documentation](https://docs.rs/mutex-trait)
 
 ## License
 
@@ -28,7 +28,7 @@ additional terms or conditions.
 ## Code of Conduct
 
 Contribution to this crate is organized under the terms of the [Rust Code of
-Conduct][CoC], the maintainer of this crate, the [Cortex-M team][team], promises
+Conduct][CoC], the maintainer of this crate, the [Resources team][team], promises
 to intervene to uphold that code of conduct.
 
 [CoC]: CODE_OF_CONDUCT.md
