@@ -1,10 +1,10 @@
-//! Low level definition of a Mutex
+//! Low level definition of a Mutex.
 //!
 //! This crate provides:
 //!
 //! - A `Mutex` trait that is to be used as the foundation of exclusive access to the data
-//! contained within it
-//! - Helper traits and implementations which allows for multiple locks to be taken at once
+//!   contained within it.
+//! - Helper traits and implementations which allows for multiple locks to be taken at once.
 //!
 //! RFC that added this trait: [RFC #377](https://github.com/rust-embedded/wg/blob/master/rfcs/0377-mutex-trait.md)
 //!
@@ -100,14 +100,14 @@ pub mod prelude {
 
     macro_rules! make_tuple_impl {
         ($name:ident, $($es:ident),+) => {
-            /// Auto-generated tuple implementation, see [Mutex](../trait.Mutex.html) for details
+            /// Auto-generated tuple implementation, see [Mutex](../trait.Mutex.html) for details.
             pub trait $name {
                 $(
-                    /// Data protected by the mutex
+                    /// Data protected by the mutex.
                     type $es;
                 )*
 
-                /// Creates a critical section and grants temporary access to the protected data
+                /// Creates a critical section and grants temporary access to the protected data.
                 fn lock<R>(&mut self, f: impl FnOnce($(&mut Self::$es),*) -> R) -> R;
             }
 
@@ -151,10 +151,10 @@ use core::cell::RefCell;
 /// Any object implementing this trait guarantees exclusive access to the data contained
 /// within the mutex for the duration of the lock.
 pub trait Mutex {
-    /// Data protected by the mutex
+    /// Data protected by the mutex.
     type Data;
 
-    /// Creates a critical section and grants temporary access to the protected data
+    /// Creates a critical section and grants temporary access to the protected data.
     fn lock<R>(&mut self, f: impl FnOnce(&mut Self::Data) -> R) -> R;
 }
 
