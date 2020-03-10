@@ -43,7 +43,6 @@
 #![deny(missing_docs)]
 
 pub mod prelude {
-    #![allow(non_snake_case)]
     //! Makes locks work on N-tuples, locks the mutexes from left-to-right in the tuple. These are
     //! used to reduce rightward drift in code and to help make intentions clearer.
     //!
@@ -119,9 +118,10 @@ pub mod prelude {
                     type $es = $es::Data;
                 )*
 
+                #[allow(non_snake_case)]
                 fn lock<R>(&mut self, f: impl FnOnce($(&mut Self::$es),*) -> R) -> R {
                     let ($(
-                            $es,
+                        $es,
                     )*) = self;
 
                     lock!($($es),*, { f($($es),*) })
