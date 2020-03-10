@@ -11,7 +11,7 @@
 //! # Example
 //!
 //! ```
-//! use mutex_trait::*;
+//! use mutex_trait::prelude::*;
 //!
 //! // A function taking 2 mutexes
 //! fn normal_lock(
@@ -42,13 +42,15 @@
 #![no_std]
 #![deny(missing_docs)]
 
+use core::cell::RefCell;
+
 /// Makes locks work on N-tuples, locks the mutexes from left-to-right in the tuple. These are
 /// used to reduce rightward drift in code and to help make intentions clearer.
 ///
 /// # Example
 ///
 /// ```
-/// use mutex_trait::*;
+/// use mutex_trait::prelude::*;
 ///
 /// fn normal_lock(
 ///     a: &mut impl Mutex<Data = i32>,
@@ -71,7 +73,7 @@
 /// Has a shorthand as:
 ///
 /// ```
-/// use mutex_trait::*;
+/// use mutex_trait::prelude::*;
 ///
 /// fn tuple_lock(
 ///     a: &mut impl Mutex<Data = i32>,
@@ -87,6 +89,8 @@
 /// }
 /// ```
 pub mod prelude {
+    pub use crate::Mutex;
+
     macro_rules! lock {
         ($e:ident, $fun:block) => {
             $e.lock(|$e| $fun )
@@ -143,9 +147,6 @@ pub mod prelude {
     make_tuple_impl!(TupleExt11, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11);
     make_tuple_impl!(TupleExt12, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12);
 }
-
-pub use crate::prelude::*;
-use core::cell::RefCell;
 
 /// Any object implementing this trait guarantees exclusive access to the data contained
 /// within the mutex for the duration of the lock.
@@ -211,9 +212,10 @@ impl<T> Mutex for Exclusive<T> {
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod tests {
-    #![allow(dead_code)]
-    use crate::*;
+    use crate::prelude::*;
+    use crate::Exclusive;
 
     fn compile_test_single_move(mut a: impl Mutex<Data = i32>) {
         a.lock(|a| {
