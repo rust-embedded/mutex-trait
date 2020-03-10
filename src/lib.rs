@@ -178,6 +178,38 @@ impl<T> Mutex for &'_ RefCell<T> {
     }
 }
 
+/// Wraps a `T` and provides exclusive access via a `Mutex` impl.
+///
+/// This provides an no-op `Mutex` implementation for data that does not need a real mutex.
+#[derive(Copy, Clone, Debug)]
+pub struct Exclusive<T>(T);
+
+impl<T> Exclusive<T> {
+    /// Creates a new `Exclusive` object wrapping `data`.
+    pub const fn new(data: T) -> Self {
+        Exclusive(data)
+    }
+
+    /// Consumes this `Exclusive` instance and returns the wrapped value.
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
+
+impl<T> From<T> for Exclusive<T> {
+    fn from(data: T) -> Self {
+        Exclusive(data)
+    }
+}
+
+impl<T> Mutex for Exclusive<T> {
+    type Data = T;
+
+    fn lock<R>(&mut self, f: impl FnOnce(&mut T) -> R) -> R {
+        f(&mut self.0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(dead_code)]
@@ -263,5 +295,14 @@ mod tests {
             *a += 1;
             *b += 1;
         });
+    }
+
+    #[test]
+    fn exclusive() {
+        let mut excl = Exclusive(0);
+
+        excl.lock(|val| *val += 1);
+
+        assert_eq!(excl.into_inner(), 1);
     }
 }
