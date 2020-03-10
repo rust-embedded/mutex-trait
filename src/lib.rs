@@ -111,7 +111,7 @@ pub mod prelude {
                 fn lock<R>(&mut self, f: impl FnOnce($(&mut Self::$es),*) -> R) -> R;
             }
 
-            impl<$($es),*> $name for ($($es),*)
+            impl<$($es),+> $name for ($($es,)+)
             where
                 $($es: crate::Mutex),*
             {
@@ -121,8 +121,8 @@ pub mod prelude {
 
                 fn lock<R>(&mut self, f: impl FnOnce($(&mut Self::$es),*) -> R) -> R {
                     let ($(
-                            $es
-                    ),*) = self;
+                            $es,
+                    )*) = self;
 
                     lock!($($es),*, { f($($es),*) })
                 }
@@ -131,6 +131,7 @@ pub mod prelude {
     }
 
     // Generate tuple lock impls
+    make_tuple_impl!(TupleExt01, T1);
     make_tuple_impl!(TupleExt02, T1, T2);
     make_tuple_impl!(TupleExt03, T1, T2, T3);
     make_tuple_impl!(TupleExt04, T1, T2, T3, T4);
@@ -142,16 +143,10 @@ pub mod prelude {
     make_tuple_impl!(TupleExt10, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10);
     make_tuple_impl!(TupleExt11, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11);
     make_tuple_impl!(TupleExt12, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12);
-    make_tuple_impl!(TupleExt13, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13);
-    make_tuple_impl!(TupleExt14, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14);
-    make_tuple_impl!(TupleExt15, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15);
-    make_tuple_impl!(
-        TupleExt16, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16
-    );
 }
 
-use core::cell::RefCell;
 pub use crate::prelude::*;
+use core::cell::RefCell;
 
 /// Any object implementing this trait guarantees exclusive access to the data contained
 /// within the mutex for the duration of the lock.
@@ -265,7 +260,7 @@ mod tests {
             *b += 1;
         });
 
-        (&a, &b).lock(|a,b| {
+        (&a, &b).lock(|a, b| {
             *a += 1;
             *b += 1;
         });
