@@ -42,52 +42,51 @@
 #![no_std]
 #![deny(missing_docs)]
 
+/// Makes locks work on N-tuples, locks the mutexes from left-to-right in the tuple. These are
+/// used to reduce rightward drift in code and to help make intentions clearer.
+///
+/// # Example
+///
+/// ```
+/// use mutex_trait::*;
+///
+/// fn normal_lock(
+///     a: &mut impl Mutex<Data = i32>,
+///     b: &mut impl Mutex<Data = i32>,
+///     c: &mut impl Mutex<Data = i32>
+/// ) {
+///     // A lot of rightward drift...
+///     a.lock(|a| {
+///         b.lock(|b| {
+///             c.lock(|c| {
+///                 *a += 1;
+///                 *b += 1;
+///                 *c += 1;
+///             });
+///         });
+///     });
+/// }
+/// ```
+///
+/// Has a shorthand as:
+///
+/// ```
+/// use mutex_trait::*;
+///
+/// fn tuple_lock(
+///     a: &mut impl Mutex<Data = i32>,
+///     b: &mut impl Mutex<Data = i32>,
+///     c: &mut impl Mutex<Data = i32>
+/// ) {
+///     // Look! Single indent and less to write
+///     (a, b, c).lock(|a, b, c| {
+///         *a += 1;
+///         *b += 1;
+///         *c += 1;
+///     });
+/// }
+/// ```
 pub mod prelude {
-    //! Makes locks work on N-tuples, locks the mutexes from left-to-right in the tuple. These are
-    //! used to reduce rightward drift in code and to help make intentions clearer.
-    //!
-    //! # Example
-    //!
-    //! ```
-    //! use mutex_trait::*;
-    //!
-    //! fn normal_lock(
-    //!     a: &mut impl Mutex<Data = i32>,
-    //!     b: &mut impl Mutex<Data = i32>,
-    //!     c: &mut impl Mutex<Data = i32>
-    //! ) {
-    //!     // A lot of rightward drift...
-    //!     a.lock(|a| {
-    //!         b.lock(|b| {
-    //!             c.lock(|c| {
-    //!                 *a += 1;
-    //!                 *b += 1;
-    //!                 *c += 1;
-    //!             });
-    //!         });
-    //!     });
-    //! }
-    //! ```
-    //!
-    //! Has a shorthand as:
-    //!
-    //! ```
-    //! use mutex_trait::*;
-    //!
-    //! fn tuple_lock(
-    //!     a: &mut impl Mutex<Data = i32>,
-    //!     b: &mut impl Mutex<Data = i32>,
-    //!     c: &mut impl Mutex<Data = i32>
-    //! ) {
-    //!     // Look! Single indent and less to write
-    //!     (a, b, c).lock(|a, b, c| {
-    //!         *a += 1;
-    //!         *b += 1;
-    //!         *c += 1;
-    //!     });
-    //! }
-    //! ```
-
     macro_rules! lock {
         ($e:ident, $fun:block) => {
             $e.lock(|$e| $fun )
@@ -99,7 +98,7 @@ pub mod prelude {
 
     macro_rules! make_tuple_impl {
         ($name:ident, $($es:ident),+) => {
-            /// Auto-generated tuple implementation, see [Mutex](../trait.Mutex.html) for details.
+            /// Auto-generated tuple implementation, see [`Mutex`](../trait.Mutex.html) for details.
             pub trait $name {
                 $(
                     /// Data protected by the mutex.
