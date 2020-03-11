@@ -1,17 +1,17 @@
-//! Low level definition of a Mutex
+//! Low level definition of a Mutex.
 //!
 //! This crate provides:
 //!
 //! - A `Mutex` trait that is to be used as the foundation of exclusive access to the data
-//! contained within it
-//! - Helper traits and implementations which allows for multiple locks to be taken at once
+//!   contained within it.
+//! - Helper traits and implementations which allows for multiple locks to be taken at once.
 //!
 //! RFC that added this trait: [RFC #377](https://github.com/rust-embedded/wg/blob/master/rfcs/0377-mutex-trait.md)
 //!
 //! # Example
 //!
 //! ```
-//! use mutex_trait::*;
+//! use mutex_trait::prelude::*;
 //!
 //! // A function taking 2 mutexes
 //! fn normal_lock(
@@ -42,52 +42,54 @@
 #![no_std]
 #![deny(missing_docs)]
 
+use core::cell::RefCell;
+
+/// Makes locks work on N-tuples, locks the mutexes from left-to-right in the tuple. These are
+/// used to reduce rightward drift in code and to help make intentions clearer.
+///
+/// # Example
+///
+/// ```
+/// use mutex_trait::prelude::*;
+///
+/// fn normal_lock(
+///     a: &mut impl Mutex<Data = i32>,
+///     b: &mut impl Mutex<Data = i32>,
+///     c: &mut impl Mutex<Data = i32>
+/// ) {
+///     // A lot of rightward drift...
+///     a.lock(|a| {
+///         b.lock(|b| {
+///             c.lock(|c| {
+///                 *a += 1;
+///                 *b += 1;
+///                 *c += 1;
+///             });
+///         });
+///     });
+/// }
+/// ```
+///
+/// Has a shorthand as:
+///
+/// ```
+/// use mutex_trait::prelude::*;
+///
+/// fn tuple_lock(
+///     a: &mut impl Mutex<Data = i32>,
+///     b: &mut impl Mutex<Data = i32>,
+///     c: &mut impl Mutex<Data = i32>
+/// ) {
+///     // Look! Single indent and less to write
+///     (a, b, c).lock(|a, b, c| {
+///         *a += 1;
+///         *b += 1;
+///         *c += 1;
+///     });
+/// }
+/// ```
 pub mod prelude {
-    #![allow(non_snake_case)]
-    //! Makes locks work on N-tuples, locks the mutexes from left-to-right in the tuple. These are
-    //! used to reduce rightward drift in code and to help make intentions clearer.
-    //!
-    //! # Example
-    //!
-    //! ```
-    //! use mutex_trait::*;
-    //!
-    //! fn normal_lock(
-    //!     a: &mut impl Mutex<Data = i32>,
-    //!     b: &mut impl Mutex<Data = i32>,
-    //!     c: &mut impl Mutex<Data = i32>
-    //! ) {
-    //!     // A lot of rightward drift...
-    //!     a.lock(|a| {
-    //!         b.lock(|b| {
-    //!             c.lock(|c| {
-    //!                 *a += 1;
-    //!                 *b += 1;
-    //!                 *c += 1;
-    //!             });
-    //!         });
-    //!     });
-    //! }
-    //! ```
-    //!
-    //! Has a shorthand as:
-    //!
-    //! ```
-    //! use mutex_trait::*;
-    //!
-    //! fn tuple_lock(
-    //!     a: &mut impl Mutex<Data = i32>,
-    //!     b: &mut impl Mutex<Data = i32>,
-    //!     c: &mut impl Mutex<Data = i32>
-    //! ) {
-    //!     // Look! Single indent and less to write
-    //!     (a, b, c).lock(|a, b, c| {
-    //!         *a += 1;
-    //!         *b += 1;
-    //!         *c += 1;
-    //!     });
-    //! }
-    //! ```
+    pub use crate::Mutex;
 
     macro_rules! lock {
         ($e:ident, $fun:block) => {
@@ -100,18 +102,18 @@ pub mod prelude {
 
     macro_rules! make_tuple_impl {
         ($name:ident, $($es:ident),+) => {
-            /// Auto-generated tuple implementation, see [Mutex](../trait.Mutex.html) for details
+            /// Auto-generated tuple implementation, see [`Mutex`](../trait.Mutex.html) for details.
             pub trait $name {
                 $(
-                    /// Data protected by the mutex
+                    /// Data protected by the mutex.
                     type $es;
                 )*
 
-                /// Creates a critical section and grants temporary access to the protected data
+                /// Creates a critical section and grants temporary access to the protected data.
                 fn lock<R>(&mut self, f: impl FnOnce($(&mut Self::$es),*) -> R) -> R;
             }
 
-            impl<$($es),*> $name for ($($es),*)
+            impl<$($es),+> $name for ($($es,)+)
             where
                 $($es: crate::Mutex),*
             {
@@ -119,10 +121,11 @@ pub mod prelude {
                     type $es = $es::Data;
                 )*
 
+                #[allow(non_snake_case)]
                 fn lock<R>(&mut self, f: impl FnOnce($(&mut Self::$es),*) -> R) -> R {
                     let ($(
-                            $es
-                    ),*) = self;
+                        $es,
+                    )*) = self;
 
                     lock!($($es),*, { f($($es),*) })
                 }
@@ -131,6 +134,7 @@ pub mod prelude {
     }
 
     // Generate tuple lock impls
+    make_tuple_impl!(TupleExt01, T1);
     make_tuple_impl!(TupleExt02, T1, T2);
     make_tuple_impl!(TupleExt03, T1, T2, T3);
     make_tuple_impl!(TupleExt04, T1, T2, T3, T4);
@@ -142,24 +146,15 @@ pub mod prelude {
     make_tuple_impl!(TupleExt10, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10);
     make_tuple_impl!(TupleExt11, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11);
     make_tuple_impl!(TupleExt12, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12);
-    make_tuple_impl!(TupleExt13, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13);
-    make_tuple_impl!(TupleExt14, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14);
-    make_tuple_impl!(TupleExt15, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15);
-    make_tuple_impl!(
-        TupleExt16, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16
-    );
 }
-
-use core::cell::RefCell;
-pub use crate::prelude::*;
 
 /// Any object implementing this trait guarantees exclusive access to the data contained
 /// within the mutex for the duration of the lock.
 pub trait Mutex {
-    /// Data protected by the mutex
+    /// Data protected by the mutex.
     type Data;
 
-    /// Creates a critical section and grants temporary access to the protected data
+    /// Creates a critical section and grants temporary access to the protected data.
     fn lock<R>(&mut self, f: impl FnOnce(&mut Self::Data) -> R) -> R;
 }
 
@@ -184,10 +179,43 @@ impl<T> Mutex for &'_ RefCell<T> {
     }
 }
 
+/// Wraps a `T` and provides exclusive access via a `Mutex` impl.
+///
+/// This provides an no-op `Mutex` implementation for data that does not need a real mutex.
+#[derive(Copy, Clone, Debug)]
+pub struct Exclusive<T>(T);
+
+impl<T> Exclusive<T> {
+    /// Creates a new `Exclusive` object wrapping `data`.
+    pub const fn new(data: T) -> Self {
+        Exclusive(data)
+    }
+
+    /// Consumes this `Exclusive` instance and returns the wrapped value.
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
+
+impl<T> From<T> for Exclusive<T> {
+    fn from(data: T) -> Self {
+        Exclusive(data)
+    }
+}
+
+impl<T> Mutex for Exclusive<T> {
+    type Data = T;
+
+    fn lock<R>(&mut self, f: impl FnOnce(&mut T) -> R) -> R {
+        f(&mut self.0)
+    }
+}
+
 #[cfg(test)]
+#[allow(dead_code)]
 mod tests {
-    #![allow(dead_code)]
-    use crate::*;
+    use crate::prelude::*;
+    use crate::Exclusive;
 
     fn compile_test_single_move(mut a: impl Mutex<Data = i32>) {
         a.lock(|a| {
@@ -265,9 +293,18 @@ mod tests {
             *b += 1;
         });
 
-        (&a, &b).lock(|a,b| {
+        (&a, &b).lock(|a, b| {
             *a += 1;
             *b += 1;
         });
+    }
+
+    #[test]
+    fn exclusive() {
+        let mut excl = Exclusive(0);
+
+        excl.lock(|val| *val += 1);
+
+        assert_eq!(excl.into_inner(), 1);
     }
 }
