@@ -43,6 +43,7 @@
 #![deny(missing_docs)]
 
 use core::cell::RefCell;
+use core::ops::{Deref, DerefMut};
 
 /// Makes locks work on N-tuples, locks the mutexes from left-to-right in the tuple. These are
 /// used to reduce rightward drift in code and to help make intentions clearer.
@@ -200,6 +201,20 @@ impl<T> Exclusive<T> {
 impl<T> From<T> for Exclusive<T> {
     fn from(data: T) -> Self {
         Exclusive(data)
+    }
+}
+
+impl<T> Deref for Exclusive<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
+
+impl<T> DerefMut for Exclusive<T> {
+    fn deref_mut(&mut self) -> &mut T {
+        &mut self.0
     }
 }
 
