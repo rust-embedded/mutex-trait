@@ -5,7 +5,8 @@
 
 > Low level API definition of a Mutex
 
-This project is developed and maintained by the [Resources team][team].
+**This crate is deprecated and no longer maintained.**
+**Consider using [critical-section](https://crates.io/crates/critical-section), [mutex](https://crates.io/crates/mutex) or [mutex-traits](https://crates.io/crates/mutex-traits) instead.**
 
 ## [Documentation](https://docs.rs/mutex-trait)
 
